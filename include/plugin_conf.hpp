@@ -18,10 +18,10 @@ class plugin_manager;
 
 struct LibItem
 {
-	string	path;
-	string	name;
+	string	        path;
+	string	        name;
 	int		type;
-	bool	status;
+	bool	        status;
 	int		number;
 };
 
@@ -53,10 +53,10 @@ public:
 
 	string&		get_item(const string& item, const string& key);
 	
-	int			get_total_num(void);
+	int		get_total_num(void);
 private:
 	fs::path	file_path;
-	int			error_code;
+	int		error_code;
 	pt::ptree	m_ptree;
 	ItemMap		config_item;
 };
@@ -64,13 +64,13 @@ private:
 class config_manager : public boost::noncopyable
 {
 public:
-							config_manager(const string path);
+						config_manager(const string path);
 
 	bool					parse(void);
 
 	bool					check_diff(void);
 private:
-	map<string, LibItem>	build_items(void);
+	map<string, LibItem>	                build_items(void);
 
 	bool					deal_difference(map<string, LibItem> items);
 private:
