@@ -1,6 +1,7 @@
 #include "include/plugin_conf.hpp"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
+#include <thread>
 
 configurefile_parser::configurefile_parser(const std::string& path) : file_path(path)
 {
@@ -71,6 +72,7 @@ bool config_manager::parse(void)
 
 bool config_manager::check_diff(void)
 {
+	bool ret = true;
 	map<string, LibItem> items;
 	map<string, LibItem> map_diff;
 	if (!_parser.parse())
@@ -78,8 +80,14 @@ bool config_manager::check_diff(void)
 		return false;
 	}
 	items = build_items();
-	set_difference(items.begin(), items.end(), _all_libs.begin(), _all_libs.end(), std::inserter(map_diff,map_diff.end()),comp());
-	return deal_difference(map_diff);
+	set_difference(items.begin(), items.end(), _all_libs.begin(), _all_libs.end(), \
+		std::inserter(map_diff,map_diff.end()),comp());
+	ret = deal_difference(map_diff);                      // update the new plugin status
+	if (ret = true)
+	{
+		_all_libs = items;
+	}
+	return ret;
 }
 
 map<string, LibItem> config_manager::build_items(void)
@@ -107,5 +115,82 @@ map<string, LibItem> config_manager::build_items(void)
 
 bool config_manager::deal_difference(map<string, LibItem> items)
 {
+	for (auto & item_diff : items)
+	{
+		string name = item_diff.first;
+		LibItem item_diff = item_diff.second;
+		auto iter = _all_libs.find(name);
+		if (iter == _all_libs.end())
+		{
+			// load the dll and start it;
+		}
+		else
+		{
+			if (item_diff.status == false)
+			{
+				// stop the thread
+			}
+			if (item_diff.number < iter->second.number)
+			{
+				// decrease the thread number
+			}
+			if (item_diff.number > iter->second.number)
+			{
+				// increate the thread number
+			}
+		}
+	}
 	return true;
+}
+
+bool config_manager::load_dll(void)
+{
+	auto iter = _all_libs.begin();
+	for (; iter != _all_libs.end(); ++iter)
+	{
+		plugin_entity entity_info;
+		string name = iter->first;
+		LibItem lib_info = iter->second;
+		string path = lib_info.path + "/" + lib_info.name;
+		create_t create;
+		destroy_t destroy;
+		void* handle = dlopen(path.c_str(), RTLD_LAZY);
+		if (!handle)
+		{
+			std::cerr << dlerror() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		dlerror();
+		create = dlsym(handle,"create");
+		if (!create)
+		{
+			std::cerr << dlerror() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		dlerror();
+		destroy = dlsym(handle, "destroy");
+		if (!destroy)
+		{
+			std::cerr << dlerror() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		dlclose(handle);
+		entity_info._dll_handle = handle;
+		entity_info._create = create;
+		entity_info._destroy = destroy;
+		entity_info._number = lib_info.number;
+		_entities.insert(pair<string, plugin_entity>(name, entity_info));
+	}
+	return true;
+}
+
+void config_manager::start(void)
+{
+	for (auto& mem : _entities)
+	{
+		create_t create = mem.second._create;
+		plugin_base* obj = create();
+		std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
+		mem.second._instances.push_back(obj);
+	}
 }
