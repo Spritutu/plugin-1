@@ -15,6 +15,7 @@ using std::map;
 using std::pair;
 
 class plugin_manager;
+class plugin_entity;
 
 struct LibItem
 {
@@ -69,11 +70,24 @@ public:
 	bool					parse(void);
 
 	bool					check_diff(void);
+
+	bool                                    load_dlls(void);
+
+	void                                    start();
+private:
+	bool                                    load_dll(const string& name, const LibItem& item);
+
+	void                                    add_plugin(const string& name, const LibItem& item);
+
+	void                                    stop_plugin(const string& name);
+
+	void                                    increase_thread_num(const string& name, size_t num);
 private:
 	map<string, LibItem>	                build_items(void);
 
 	bool					deal_difference(map<string, LibItem> items);
 private:
-	configurefile_parser	_parser;
-	map<string, LibItem>	_all_libs;
+	configurefile_parser	        _parser;
+	map<string, LibItem>	        _all_libs;
+	map<string, plugin_entity>      _entities;
 };

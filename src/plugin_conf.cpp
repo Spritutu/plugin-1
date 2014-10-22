@@ -120,77 +120,144 @@ bool config_manager::deal_difference(map<string, LibItem> items)
 		string name = item_diff.first;
 		LibItem item_diff = item_diff.second;
 		auto iter = _all_libs.find(name);
-		if (iter == _all_libs.end())
+		if (iter == _all_libs.end())                                    // load the dll and start it;
 		{
-			// load the dll and start it;
+			add_plugin(name, item_diff);
 		}
 		else
 		{
-			if (item_diff.status == false)
+			if (item_diff.status == false)                          // stop the thread
 			{
-				// stop the thread
+				stop_plugin(name);
 			}
-			if (item_diff.number < iter->second.number)
+			if (item_diff.number < iter->second.number \
+				|| item_diff.number > iter->second.number)      // decrease the thread number
 			{
-				// decrease the thread number
-			}
-			if (item_diff.number > iter->second.number)
-			{
-				// increate the thread number
+				int num = item_diff.number - iter->second.number;
+				increase_thread_num(name, num);
 			}
 		}
 	}
 	return true;
 }
 
-bool config_manager::load_dll(void)
+void config_manager::add_plugin(const string& name, const LibItem& item)
+{
+	plugin_entity entity = load_dll(name, item);
+	size_t num = entity._number;
+	while (num--)
+	{
+		create_t create = entity._create;
+		plugin_base* obj = create();
+		if (entity._status == true)
+		{
+			std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, 
+			obj->_status = true;                    // and implement the do_function which is the real thread body
+		}                                               
+		entity._instances.push_back(obj);
+	}
+}
+
+void config_manager::stop_plugin(const string& name)
+{
+	auto item = _entities.find(name);
+	if (item != _entities.end())
+	{
+		item->second._status= false;                    // just change the status flag. next refresh time check if it's time to stop the thread
+		auto begin = item->second._instances.begin();
+		auto end = item->second._instances.end();
+		for_each(begin, end, [](plugin_base* ptr){
+			ptr->_status = false;                   // change all the stances's state to stop status
+		});
+	}
+}
+
+void config_manager::increase_thread_num(const string& name, size_t num)
+{
+	auto item = _entities.find(name);
+	plugin_entity = item->second;
+	if (num > 0)                                            // add num threads
+	{
+		while (num--)
+		{
+			create_t create = entity._create;
+			plugin_base* obj = create();
+			std::thread(&obj::function, obj);
+			obj->_status = true;
+			item->second._instances.push_back(obj);
+		}
+	}
+	else
+	{                                                       // decrease num threads 
+		int i = 0;
+		while (num++)
+		{
+			item->second._instances[i]._status = false;
+		}
+	}
+}
+
+bool config_manager::load_dlls(void)
 {
 	auto iter = _all_libs.begin();
 	for (; iter != _all_libs.end(); ++iter)
 	{
-		plugin_entity entity_info;
-		string name = iter->first;
-		LibItem lib_info = iter->second;
-		string path = lib_info.path + "/" + lib_info.name;
-		create_t create;
-		destroy_t destroy;
-		void* handle = dlopen(path.c_str(), RTLD_LAZY);
-		if (!handle)
-		{
-			std::cerr << dlerror() << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		dlerror();
-		create = dlsym(handle,"create");
-		if (!create)
-		{
-			std::cerr << dlerror() << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		dlerror();
-		destroy = dlsym(handle, "destroy");
-		if (!destroy)
-		{
-			std::cerr << dlerror() << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		dlclose(handle);
-		entity_info._dll_handle = handle;
-		entity_info._create = create;
-		entity_info._destroy = destroy;
-		entity_info._number = lib_info.number;
-		_entities.insert(pair<string, plugin_entity>(name, entity_info));
+		plugin_entity entity = load_dll(iter->first, iter->second);
+		_entities.insert(pair<string, plugin_entity>(iter->first, entity));
 	}
 	return true;
+}
+
+plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
+{
+	plugin_entity entity_info;
+	LibItem lib_info = item;
+	string path = lib_info.path + "/" + lib_info.name;
+	create_t create;
+	destroy_t destroy;
+	void* handle = dlopen(path.c_str(), RTLD_LAZY);
+	if (!handle)
+	{
+		std::cerr << dlerror() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	dlerror();
+	create = dlsym(handle, "create");
+	if (!create)
+	{
+		std::cerr << dlerror() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	dlerror();
+	destroy = dlsym(handle, "destroy");
+	if (!destroy)
+	{
+		std::cerr << dlerror() << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	dlclose(handle);
+	entity_info._status = lib_info.status;
+	entity_info._dll_handle = handle;
+	entity_info._create = create;
+	entity_info._destroy = destroy;
+	entity_info._number = lib_info.number;
+	return plugin_entity;
 }
 
 void config_manager::start(void)
 {
 	for (auto& mem : _entities)
 	{
-		create_t create = mem.second._create;
-		plugin_base* obj = create();
-		std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
-		mem.second._instances.push_back(obj);
+		size_t num = mem.second._number;
+		while (num--)
+		{
+			create_t create = mem.second._create;
+			plugin_base* obj = create();
+			if (mem.second._status == true)
+			{
+				std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
+			}
+			mem.second._instances.push_back(obj);
+		}
 	}
 }
