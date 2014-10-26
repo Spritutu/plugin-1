@@ -1,3 +1,7 @@
+set(executable_output_path ${project_source_dir}/bin)
+
+link_directories(${project_source_dir}/lib)
+
 aux_source_directory(. DIR_SRCS)
 
 add_definitions(-std=c++11)

@@ -1,8 +1,10 @@
 #include "../include/plugin_conf.h"
+#include "../include/plugin_entity.h"
+#include "../include/plugin_base.h"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <thread>
-
+#include <dlfcn.h>
 configurefile_parser::configurefile_parser(const std::string& path) : file_path(path)
 {
 	error_code = 0;
@@ -34,7 +36,7 @@ bool configurefile_parser::parse(void)
 	return true;
 }
 
-string& configurefile_parser::get_item(const string& item, const string& key)
+string configurefile_parser::get_item(const string& item, const string& key)
 {
 	string value;
 	auto iter_map = config_item.find(item);
@@ -118,22 +120,22 @@ bool config_manager::deal_difference(map<string, LibItem> items)
 	for (auto & item_diff : items)
 	{
 		string name = item_diff.first;
-		LibItem item_diff = item_diff.second;
+		LibItem diff = item_diff.second;
 		auto iter = _all_libs.find(name);
 		if (iter == _all_libs.end())                                    // load the dll and start it;
 		{
-			add_plugin(name, item_diff);
+			add_plugin(name, diff);
 		}
 		else
 		{
-			if (item_diff.status == false)                          // stop the thread
+			if (diff.status == false)                          // stop the thread
 			{
 				stop_plugin(name);
 			}
-			if (item_diff.number < iter->second.number \
-				|| item_diff.number > iter->second.number)      // decrease the thread number
+			if (diff.number < iter->second.number \
+				|| diff.number > iter->second.number)      // decrease the thread number
 			{
-				int num = item_diff.number - iter->second.number;
+				int num = diff.number - iter->second.number;
 				increase_thread_num(name, num);
 			}
 		}
@@ -151,7 +153,7 @@ void config_manager::add_plugin(const string& name, const LibItem& item)
 		plugin_base* obj = create();
 		if (entity._status == true)
 		{
-			std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, 
+			std::thread(&plugin_base::function, obj);       // every plugin should derived from plugin_base, 
 			obj->_status = true;                    // and implement the do_function which is the real thread body
 		}                                               
 		entity._instances.push_back(obj);
@@ -175,14 +177,14 @@ void config_manager::stop_plugin(const string& name)
 void config_manager::increase_thread_num(const string& name, size_t num)
 {
 	auto item = _entities.find(name);
-	plugin_entity = item->second;
+	auto entity = item->second;
 	if (num > 0)                                            // add num threads
 	{
 		while (num--)
 		{
 			create_t create = entity._create;
 			plugin_base* obj = create();
-			std::thread(&obj::function, obj);
+			std::thread(&plugin_base::function, obj);
 			obj->_status = true;
 			item->second._instances.push_back(obj);
 		}
@@ -192,7 +194,7 @@ void config_manager::increase_thread_num(const string& name, size_t num)
 		int i = 0;
 		while (num++)
 		{
-			item->second._instances[i]._status = false;
+			item->second._instances[i++]->_status = false;
 		}
 	}
 }
@@ -222,14 +224,14 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 		exit(EXIT_FAILURE);
 	}
 	dlerror();
-	create = dlsym(handle, "create");
+	create = (create_t)dlsym(handle, "create");
 	if (!create)
 	{
 		std::cerr << dlerror() << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	dlerror();
-	destroy = dlsym(handle, "destroy");
+	destroy = (destroy_t)dlsym(handle, "destroy");
 	if (!destroy)
 	{
 		std::cerr << dlerror() << std::endl;
@@ -241,7 +243,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 	entity_info._create = create;
 	entity_info._destroy = destroy;
 	entity_info._number = lib_info.number;
-	return plugin_entity;
+	return entity_info;
 }
 
 void config_manager::start(void)
@@ -255,7 +257,7 @@ void config_manager::start(void)
 			plugin_base* obj = create();
 			if (mem.second._status == true)
 			{
-				std::thread(&obj::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
+				std::thread(&plugin_base::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
 			}
 			mem.second._instances.push_back(obj);
 		}

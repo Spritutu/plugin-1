@@ -2,13 +2,12 @@
 #include <vector>
 
 class plugin_base;
+typedef plugin_base* (*create_t)(void);
+typedef void         (*destroy_t)(void);
 
 class plugin_entity
 {
-	typedef plugin_base* (*create_t)(void);
-	typedef void         (*destroy_t)(void);
-	
-private:
+public:
 	int	                        _number;
 	bool                            _status;
 	std::vector<plugin_base*>       _instances;

@@ -1,21 +1,20 @@
 #pragma once
 
-plugin_base* create()
-{
-        return new plugin_base();
-}
-
-void destroy(plugin_base* ptr)
-{
-        delete ptr;
-}
-
 class plugin_base
 {
+public:
         plugin_base()
         {
                 _status = false;
         }
+	virtual ~plugin_base() {}
+
+	void function() 
+	{
+		do_function();	
+	}
 private:
+	void virtual do_function() = 0;	
+public:
         bool _status;                    // the thread's running state
 };

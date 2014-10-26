@@ -52,7 +52,7 @@ public:
 public:
 	bool		parse(void);
 
-	string&		get_item(const string& item, const string& key);
+	string		get_item(const string& item, const string& key);
 	
 	int		get_total_num(void);
 private:
@@ -75,7 +75,7 @@ public:
 
 	void                                    start();
 private:
-	bool                                    load_dll(const string& name, const LibItem& item);
+	plugin_entity				load_dll(const string& name, const LibItem& item);
 
 	void                                    add_plugin(const string& name, const LibItem& item);
 
