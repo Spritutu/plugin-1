@@ -1,4 +1,4 @@
-#include "include/plugin_conf.hpp"
+#include "../include/plugin_conf.h"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <thread>
