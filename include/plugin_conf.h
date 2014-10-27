@@ -73,7 +73,11 @@ public:
 
 	bool                                    load_dlls(void);
 
-	void                                    start();
+	void                                    start(void);
+
+	void                                    close(void);
+
+	void                                    print_dlls_info(void);
 private:
 	plugin_entity				load_dll(const string& name, const LibItem& item);
 

@@ -85,7 +85,7 @@ bool config_manager::check_diff(void)
 	set_difference(items.begin(), items.end(), _all_libs.begin(), _all_libs.end(), \
 		std::inserter(map_diff,map_diff.end()),comp());
 	ret = deal_difference(map_diff);                      // update the new plugin status
-	if (ret = true)
+	if (ret == true)
 	{
 		_all_libs = items;
 	}
@@ -237,12 +237,12 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 		std::cerr << dlerror() << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	dlclose(handle);
 	entity_info._status = lib_info.status;
 	entity_info._dll_handle = handle;
 	entity_info._create = create;
 	entity_info._destroy = destroy;
 	entity_info._number = lib_info.number;
+	entity_info._dll_handle = handle;
 	return entity_info;
 }
 
@@ -261,5 +261,29 @@ void config_manager::start(void)
 			}
 			mem.second._instances.push_back(obj);
 		}
+	}
+}
+
+void config_manager::close(void)
+{
+	for (auto& item : _entities)
+	{
+		dlclose(item.second._dll_handle);
+		for (int i = 0; i < item.second._number; ++i)
+		{
+			delete item.second._instances[i];
+		}
+	}
+}
+
+void config_manager::print_dlls_info(void)
+{
+	std::cout << "-------------------------------------------------" << std::endl;
+	std::cout << "|" << '\t' << "name" << '\t' << "|" << '\t' << "status" << '\t' << "|" << '\t' << "number" << '\t' << "|" << std::endl;
+	std::cout << "-------------------------------------------------" << std::endl;
+	for (auto& item : _entities)
+	{
+		std::cout << '|' << '\t' << item.first << '\t' << "|" << '\t' << item.second._status << '\t' << "|" << '\t' << item.second._number << '\t' << "|" << std::endl;
+		std::cout << "-------------------------------------------------" << std::endl;
 	}
 }

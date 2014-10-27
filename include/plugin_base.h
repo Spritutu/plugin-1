@@ -3,10 +3,10 @@
 class plugin_base
 {
 public:
-        plugin_base()
-        {
-                _status = false;
-        }
+	plugin_base()
+	{
+		_status = false;
+	}
 	virtual ~plugin_base() {}
 
 	void function() 
@@ -16,5 +16,5 @@ public:
 private:
 	void virtual do_function() = 0;	
 public:
-        bool _status;                    // the thread's running state
+	bool _status;                    // the thread's running state
 };
