@@ -53,13 +53,12 @@ public:
 	bool		parse(void);
 
 	string		get_item(const string& item, const string& key);
-	
-	int		get_total_num(void);
+public:
+	ItemMap		config_item;
 private:
 	fs::path	file_path;
 	int		error_code;
 	pt::ptree	m_ptree;
-	ItemMap		config_item;
 };
 
 class config_manager : public boost::noncopyable

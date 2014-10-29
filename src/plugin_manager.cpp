@@ -1,4 +1,6 @@
-#include "plugin_manager.h"
+#include "../include/plugin_manager.h"
+#include "../include/plugin_entity.h"
+#include <unistd.h>
 
 plugin_manager::plugin_manager(const string& path)
 {
@@ -30,7 +32,7 @@ void plugin_manager::start()
                 {
                         std::cerr << "errors encountered while refreshing" << std::endl;
                 }
-                Sleep(3);
+                sleep(3);
         }
 }
 

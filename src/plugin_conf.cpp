@@ -53,11 +53,6 @@ string configurefile_parser::get_item(const string& item, const string& key)
 	return value;
 }
 
-int configurefile_parser::get_total_num(void)
-{
-	return config_item.size();
-}
-
 config_manager::config_manager(const string path) : _parser(path)
 {
 }
@@ -96,21 +91,22 @@ map<string, LibItem> config_manager::build_items(void)
 {
 	LibItem item;
 	map<string, LibItem> items;
-	int size = _parser.get_total_num();
-	for (int i = 0; i < size; ++i)
+	auto begin = _parser.config_item.begin();
+	auto end = _parser.config_item.end();
+	for(; begin != end; ++begin)
 	{
 		string str;
-		str = _parser.get_item("lib", "path");
+		str = _parser.get_item(begin->first, "path");
 		item.path = str;
-		str = _parser.get_item("lib", "name");
+		str = _parser.get_item(begin->first, "name");
 		item.name = str;
-		str = _parser.get_item("lib", "type");
+		str = _parser.get_item(begin->first, "type");
 		item.type = std::stoi(str);
-		str = _parser.get_item("lib", "status");
+		str = _parser.get_item(begin->first, "status");
 		item.status = boost::lexical_cast<bool>(str);
-		str = _parser.get_item("lib", "number");
+		str = _parser.get_item(begin->first, "number");
 		item.number = std::stoi(str);
-		items.insert(std::pair<string,LibItem>("lib",item));
+		items.insert(std::pair<string,LibItem>(begin->first, item));
 	}
 	return items;
 }
