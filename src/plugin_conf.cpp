@@ -70,6 +70,28 @@ bool config_manager::parse(void)
 bool config_manager::check_diff(void)
 {
 	bool ret = true;
+	for (auto& entity : _entities)
+	{
+		for (int i = 0; i < entity.second._number; ++i)
+		{
+			if (entity.second._instances[i]._status == false)
+			{
+				entity.second._instances[i]->thread_cancel();                          // first stop the thread
+				entity.second._destroy(entity.second._instances[i]);
+			}
+		}
+		auto instances = entity.second._instances;
+		instances.erase(
+			std::remove_if(instances.begin(), instances.end(), [](const plugin_base* ptr)
+				      {
+				return ptr->_status == false;   
+			}), 
+			instances.end());
+		if (!instances.size())
+		{
+			dlclose(entity.second._dll_handle);
+		}
+	}
 	map<string, LibItem> items;
 	map<string, LibItem> map_diff;
 	if (!_parser.parse())
@@ -253,7 +275,9 @@ void config_manager::start(void)
 			plugin_base* obj = create();
 			if (mem.second._status == true)
 			{
-				std::thread(&plugin_base::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
+				std::thread plugin_thread(&plugin_base::function, obj);       // every plugin should derived from plugin_base, and implement the do_function which is the real thread body
+				plugin_thread.detach();
+				
 			}
 			mem.second._instances.push_back(obj);
 		}
@@ -264,11 +288,12 @@ void config_manager::close(void)
 {
 	for (auto& item : _entities)
 	{
-		dlclose(item.second._dll_handle);
 		for (int i = 0; i < item.second._number; ++i)
 		{
-			delete item.second._instances[i];
+			item.second._instances[i]->thread_cancel();                          // first stop the thread
+			item.second._destroy(item.second._instances[i]);                       
 		}
+		dlclose(item.second._dll_handle);
 	}
 }
 

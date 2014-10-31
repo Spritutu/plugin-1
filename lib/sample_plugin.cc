@@ -17,3 +17,13 @@ private:
 		}
 	}
 };
+
+extern "C" plugin_base* create()
+{
+	return new plugin_example();
+}
+
+extern "C" void destroy(plugin_base* p)
+{
+	delete p;
+}

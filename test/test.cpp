@@ -4,5 +4,12 @@
 #include <iostream>
 int main()
 {
-    std::cout << "hello,world" << std::endl;
+        char* path = getenv("PLUGIN_PATH");
+        if (!path)
+        {
+                std::err << "you should set PLUGIN_PATH first" << std::endl;
+                exit(0);
+        }
+        plugin_manager* manager = new plugin_manager(path);
+        manager->start();
 }

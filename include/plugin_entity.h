@@ -2,8 +2,7 @@
 #include <vector>
 
 class plugin_base;
-typedef plugin_base* (*create_t)(void);
-typedef void         (*destroy_t)(void);
+
 
 class plugin_entity
 {
