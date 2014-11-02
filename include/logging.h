@@ -2,6 +2,7 @@
 #include <iostream>
 #include <mutex>
 #include <fstream>
+#include <sstream>
 
 class log_file
 {
@@ -9,10 +10,13 @@ public:
         log_file(const std::string& path)
                 : _path(path)
         {}
+
+	log_file()
+	{}
         
-        void open(const std::string& file_name, ios_base::open_mode mode = ios_base::in | ios_base::out)
+        void open(const std::string& file_name)
         {
-                _file.open(file_name.c_str(), mode);
+                _file.open(file_name.c_str(), std::fstream::in | std::fstream::out | std::fstream::app);
                 std::string log_head = "\n\n*****starting log**************\n\n";
                 write(log_head);
         }
@@ -40,23 +44,22 @@ enum log_level
         INFO,
         WARN,
         ERROR,
-        FILE
 };
 
-void console_output(log_level level, const std::string str)
+void console_output(log_level level, const std::string& prefex, const std::string& str)
 {
         if (level == DEBUG)
         {
-                std::cout << str << std:end;
-        }else if (level === INFO)
+                std::cout << "\033[1;32m" << prefex << "\033[0m" << str << std::endl;
+        }else if (level == INFO)
         {
-                std::cout << str << std:end;
+                std::cout << "\033[32m" << prefex << "\033[0m" << str << std::endl;
         }else if (level == WARN)
         {
-                std::cout << str << std:end;
-        }else if (level === ERROR)
+                std::cout << "\033[1;33m" << prefex << "\033[0m"  << str << std::endl;
+        }else if (level == ERROR)
         {
-                std::cout << str << std:end;
+                std::cout << "\033[1;31m" << prefex << "\033[0m" << str << std::endl;
         }
 }
 
@@ -81,13 +84,14 @@ void log_writer(log_level level, const std::string& log_context)
         {
                 single_writer<log_file>().write(log_context);
         }
-        console_output(level, log_context);
+	std::string prefex = "time : ";
+        console_output(level, prefex, log_context);
 }
 
 class log_to_write : public boost::noncopyable
 {
 public:
-        explicit log_to_write(log_level level, const std::string log_context) 
+        explicit log_to_write(log_level level) 
                 : _level(level)
         {}
 
@@ -107,7 +111,7 @@ private:
         log_level _level;
 };
 
-#define LOG_INI(path) do 
+#define LOG_INI(path) do \
         {\
                 log_file& file = single_writer<log_file>(); \
                 std::string filename = path; \
@@ -117,8 +121,7 @@ private:
                 } \
         } while (0); \
 
-#define LOG_DEBUG(str)  log_to_write(DEBUG, str)
-#define LOG_INFO(str) log_to_write(INFO, str)
-#define LOG_WARN(str) log_to_write(WARN, str)
-#define LOG_ERROR(str) log_to_write(ERROR, str)
-#define LOG_FILE(str) log_to_write(FILE, str)
+#define LOG_DEBUG  log_to_write(DEBUG)
+#define LOG_INFO log_to_write(INFO)
+#define LOG_WARN log_to_write(WARN)
+#define LOG_ERROR log_to_write(ERROR)
