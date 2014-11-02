@@ -1,8 +1,10 @@
 #include <boost/noncopyable.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 #include <mutex>
 #include <fstream>
 #include <sstream>
+#define BOOST_DATE_TIME_SOURCE
 
 class log_file
 {
@@ -38,26 +40,23 @@ private:
         std::fstream _file;
 };
 
-enum log_level
-{
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-};
-
+static std::string level_debug = "DEBUG";
+static std::string level_info= "INFO";
+static std::string level_warn= "WARN";
+static std::string level_error= "ERROR";
+typedef std::string log_level;
 void console_output(log_level level, const std::string& prefex, const std::string& str)
 {
-        if (level == DEBUG)
+        if (level == "DEBUG")
         {
                 std::cout << "\033[1;32m" << prefex << "\033[0m" << str << std::endl;
-        }else if (level == INFO)
+        }else if (level == "INFO")
         {
                 std::cout << "\033[32m" << prefex << "\033[0m" << str << std::endl;
-        }else if (level == WARN)
+        }else if (level == "WARN")
         {
                 std::cout << "\033[1;33m" << prefex << "\033[0m"  << str << std::endl;
-        }else if (level == ERROR)
+        }else if (level == "ERROR")
         {
                 std::cout << "\033[1;31m" << prefex << "\033[0m" << str << std::endl;
         }
@@ -67,6 +66,7 @@ template <class T>
 T& single_locker()
 {
         static T locker;
+        return locker;
         return locker;
 }
 
@@ -84,7 +84,18 @@ void log_writer(log_level level, const std::string& log_context)
         {
                 single_writer<log_file>().write(log_context);
         }
-	std::string prefex = "time : ";
+	std::string str_time = boost::posix_time::to_iso_string( \
+			boost::posix_time::second_clock::local_time()
+		);
+	int pos = str_time.find('T');
+	str_time.replace(pos, 1, std::string("-"));
+	str_time.replace(pos + 3, 0, std::string(":"));
+	str_time.replace(pos + 6, 0, std::string(":"));
+	std::string prefex;
+	prefex += str_time;
+	prefex += " [";
+	prefex += level;
+	prefex += "] ";
         console_output(level, prefex, log_context);
 }
 
@@ -121,7 +132,7 @@ private:
                 } \
         } while (0); \
 
-#define LOG_DEBUG  log_to_write(DEBUG)
-#define LOG_INFO log_to_write(INFO)
-#define LOG_WARN log_to_write(WARN)
-#define LOG_ERROR log_to_write(ERROR)
+#define LOG_DEBUG  log_to_write(level_debug)
+#define LOG_INFO log_to_write(level_info)
+#define LOG_WARN log_to_write(level_warn)
+#define LOG_ERROR log_to_write(level_error)
