@@ -1,10 +1,13 @@
+#ifndef LOGGING_H
+#define LOGGING_H
+
 #include <boost/noncopyable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 #include <mutex>
 #include <fstream>
 #include <sstream>
-#define BOOST_DATE_TIME_SOURCE
+//#define BOOST_DATE_TIME_SOURCE
 
 class log_file
 {
@@ -45,7 +48,7 @@ static std::string level_info= "INFO";
 static std::string level_warn= "WARN";
 static std::string level_error= "ERROR";
 typedef std::string log_level;
-void console_output(log_level level, const std::string& prefex, const std::string& str)
+static void console_output(log_level level, const std::string& prefex, const std::string& str)
 {
 	if (level == "DEBUG")
 	{
@@ -77,7 +80,7 @@ T& single_writer()
 	return writer;
 }
 
-void log_writer(log_level level, const std::string& log_context)
+static void log_writer(log_level level, const std::string& log_context)
 {
 	std::lock_guard<std::mutex> lock(single_locker<std::mutex>());
 	if (single_writer<log_file>().is_open())
@@ -136,3 +139,5 @@ private:
 #define LOG_INFO log_to_write(level_info)
 #define LOG_WARN log_to_write(level_warn)
 #define LOG_ERROR log_to_write(level_error)
+
+#endif

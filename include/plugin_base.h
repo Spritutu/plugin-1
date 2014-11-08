@@ -11,6 +11,7 @@ public:
 
 	void function() 
 	{
+		_thread_id = std::this_thread::get_id();
 		do_function();	
 	}
 
@@ -21,7 +22,9 @@ public:
 private:
 	void virtual do_function() = 0;	
 public:
-	bool _status;                    // the thread's running state
+	bool                    _status;                    // the thread's running state
+	std::thread::id         _thread_id;
+
 };
 
 typedef plugin_base* (*create_t)(void);

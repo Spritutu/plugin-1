@@ -2,15 +2,21 @@
 // mail : xiaopeifenng@gmail.com
 //
 #include "../include/plugin_manager.h"
+#include "../include/logging.h"
 #include <iostream>
 #define _WIN
+
 int main()
 {
-//        char* path = getenv("PLUGIN_PATH");
+#ifdef _LINUX
+        char* path = getenv("PLUGIN_PATH");
+#else
         char* path = "f:\\coding-on-github\\plugin\\config\\libconf.ini";
+#endif
+        LOG_INI("log.txt");
         if (!path)
         {
-                std::cerr << "you should set PLUGIN_PATH first" << std::endl;
+              //  LOG_ERROR << "you should set PLUGIN_PATH first";
                 exit(0);
         }
         plugin_manager* manager = new plugin_manager(path);

@@ -1,6 +1,7 @@
 #include "../include/plugin_conf.h"
 #include "../include/plugin_entity.h"
 #include "../include/plugin_base.h"
+#include "../include/logging.h"
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <thread>
@@ -17,9 +18,11 @@ configurefile_parser::configurefile_parser(const std::string& path) : file_path(
 	if (exists(file_path))
 	{
 		read_ini(path, m_ptree);
+		LOG_DEBUG << "reading configure file";
 	}
 	else
 	{
+		LOG_ERROR << file_path << " not exist";
 		error_code = -1;
 	}
 }
@@ -28,6 +31,7 @@ bool configurefile_parser::parse(void)
 {
 	if (error_code == -1)
 	{
+		LOG_ERROR << "configurefile_parser contructor return false";
 		return false;
 	}
 	for (auto& item : m_ptree)
@@ -39,14 +43,15 @@ bool configurefile_parser::parse(void)
 		}
 		config_item.insert(std::make_pair(item.first, vec_temp));
 	}
-	{
+	// print the infomaiton reading from the configure file
+	{                                                                               
 		auto func = [](pair<string, vector< pair<string, string> > > element)
 			    {
-				std::cout << element.first << std::endl;
+				LOG_INFO << element.first;
 				std::for_each(element.second.begin(), element.second.end(),
 					[](const std::pair<string, string>& info)
 					{
-						std::cout << info.first << " : " << info.second << std::endl;
+						LOG_INFO << info.first << " : " << info.second;
 					}
 				);
 			    };
@@ -80,8 +85,10 @@ bool config_manager::parse(void)
 {
 	if (!_parser.parse())
 	{
+		LOG_ERROR << "config_manager::parse failed";
 		return false;
 	}
+	LOG_DEBUG << "parse the configure file successful";
 	_all_libs = build_items();
 	return true;
 }
@@ -95,6 +102,7 @@ bool config_manager::check_diff(void)
 		{
 			if (entity.second._instances[i]->_status == false)
 			{
+				LOG_DEBUG << "stop the thread: " << entity.second._instances[i]->_thread_id;
 				entity.second._instances[i]->thread_cancel();                          // first stop the thread
 				entity.second._destroy(entity.second._instances[i]);
 			}
@@ -119,6 +127,7 @@ bool config_manager::check_diff(void)
 	map<string, LibItem> map_diff;
 	if (!_parser.parse())
 	{
+		LOG_ERROR << "configurefile_parser::parse(void) error";
 		return false;
 	}
 	items = build_items();
@@ -127,6 +136,7 @@ bool config_manager::check_diff(void)
 	ret = deal_difference(map_diff);                      // update the new plugin status
 	if (ret == true)
 	{
+		LOG_DEBUG << "deal_difference successful";
 		_all_libs = items;
 	}
 	return ret;
@@ -186,6 +196,7 @@ bool config_manager::deal_difference(map<string, LibItem> items)
 
 void config_manager::add_plugin(const string& name, const LibItem& item)
 {
+	LOG_DEBUG << "begin to add_plugin";
 	plugin_entity entity = load_dll(name, item);
 	size_t num = entity._number;
 	while (num--)
@@ -199,10 +210,12 @@ void config_manager::add_plugin(const string& name, const LibItem& item)
 		}                                               
 		entity._instances.push_back(obj);
 	}
+	LOG_DEBUG << "add_plugin finished";
 }
 
 void config_manager::stop_plugin(const string& name)
 {
+	LOG_DEBUG << "begin to stop plugin " << name;
 	auto item = _entities.find(name);
 	if (item != _entities.end())
 	{
@@ -221,6 +234,7 @@ void config_manager::increase_thread_num(const string& name, size_t num)
 	auto entity = item->second;
 	if (num > 0)                                            // add num threads
 	{
+		LOG_DEBUG << "need to increase the thread number";
 		while (num--)
 		{
 			create_t create = entity._create;
@@ -231,7 +245,9 @@ void config_manager::increase_thread_num(const string& name, size_t num)
 		}
 	}
 	else
-	{                                                       // decrease num threads 
+	{       
+						  // decrease num threads 
+		LOG_DEBUG << "need to decrease the thread number";
 		int i = 0;
 		while (num++)
 		{
@@ -258,12 +274,6 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 	string path = lib_info.path + "\\" + lib_info.name;
 	create_t create = nullptr;
 	destroy_t destroy = nullptr;
-
-	if (fs::exists(path.c_str()))
-	{
-		std::cout << path << " exist" << std::endl;
-	}else
-		std::cout << path << " not exist" << std::endl;
 	
 #ifdef _LINUX
 	void* handle = nullptr;
@@ -275,11 +285,10 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 	handle = dlopen(path.c_str(), RTLD_LAZY);
 #else 
 	handle = LoadLibrary(path.c_str());
-	std::cout << "LoadLibrary load file " << path.c_str() << std::endl;
 #endif
 	if (!handle)
 	{
-		std::cerr << "open error" << std::endl;
+		LOG_ERROR << "open error";
 		exit(EXIT_FAILURE);
 	}
 #ifdef _LINUX
@@ -289,7 +298,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 #endif
 	if (!create)
 	{
-		std::cerr << "load create error" << std::endl;
+		LOG_ERROR << "load create error";
 		exit(EXIT_FAILURE);
 	}
 #ifdef _LINUX
@@ -299,7 +308,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 #endif
 	if (!destroy)
 	{
-		std::cerr << "load destroy error" << std::endl;
+		LOG_ERROR << "load destroy error";
 		exit(EXIT_FAILURE);
 	}
 	entity_info._status = lib_info.status;
@@ -313,6 +322,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 
 void config_manager::start(void)
 {
+	LOG_DEBUG << "begin to config_manager::start";
 	for (auto& mem : _entities)
 	{
 		size_t num = mem.second._number;
