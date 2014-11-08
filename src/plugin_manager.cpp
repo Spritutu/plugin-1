@@ -1,6 +1,7 @@
 #include "../include/plugin_manager.h"
 #include "../include/plugin_entity.h"
-#include <unistd.h>
+#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 plugin_manager::plugin_manager(const string& path)
 {
@@ -32,7 +33,7 @@ void plugin_manager::start()
                 {
                         std::cerr << "errors encountered while refreshing" << std::endl;
                 }
-                sleep(3);
+                boost::this_thread::sleep(boost::posix_time::milliseconds(400));
         }
 }
 

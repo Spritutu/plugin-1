@@ -1,5 +1,5 @@
 #pragma once
-
+#include <thread>
 class plugin_base
 {
 public:
@@ -25,4 +25,4 @@ public:
 };
 
 typedef plugin_base* (*create_t)(void);
-typedef void(*destroy_t)(void);
+typedef void(*destroy_t)(plugin_base*);

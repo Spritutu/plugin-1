@@ -4,7 +4,13 @@
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <thread>
+#ifdef _LINUX
 #include <dlfcn.h>
+#else
+#include <windows.h>
+#endif
+
+
 configurefile_parser::configurefile_parser(const std::string& path) : file_path(path)
 {
 	error_code = 0;
@@ -74,7 +80,7 @@ bool config_manager::check_diff(void)
 	{
 		for (int i = 0; i < entity.second._number; ++i)
 		{
-			if (entity.second._instances[i]._status == false)
+			if (entity.second._instances[i]->_status == false)
 			{
 				entity.second._instances[i]->thread_cancel();                          // first stop the thread
 				entity.second._destroy(entity.second._instances[i]);
@@ -89,7 +95,11 @@ bool config_manager::check_diff(void)
 			instances.end());
 		if (!instances.size())
 		{
+#ifdef _LINUX
 			dlclose(entity.second._dll_handle);
+#else
+			FreeLibrary(entity.second._dll_handle);
+#endif
 		}
 	}
 	map<string, LibItem> items;
@@ -235,24 +245,41 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 	string path = lib_info.path + "/" + lib_info.name;
 	create_t create;
 	destroy_t destroy;
-	void* handle = dlopen(path.c_str(), RTLD_LAZY);
+
+#ifdef _LINUX
+	void* handle;
+#else
+	HINSTANCE handle;
+#endif
+
+#ifdef _LINUX
+	handle = dlopen(path.c_str(), RTLD_LAZY);
+#else 
+	handle = LoadLibrary(path.c_str());
+#endif
 	if (!handle)
 	{
-		std::cerr << dlerror() << std::endl;
+		std::cerr << "open error" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	dlerror();
+#ifdef _LINUX
 	create = (create_t)dlsym(handle, "create");
+#else
+	create = (create_t)GetProcAddress(handle, "create");
+#endif
 	if (!create)
 	{
-		std::cerr << dlerror() << std::endl;
+		std::cerr << "load error" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	dlerror();
+#ifdef _LINUX
 	destroy = (destroy_t)dlsym(handle, "destroy");
+#else
+	destroy = (destroy_t)GetProcAddress(handle, "destroy");
+#endif
 	if (!destroy)
 	{
-		std::cerr << dlerror() << std::endl;
+		std::cerr << "load error" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	entity_info._status = lib_info.status;
@@ -293,7 +320,11 @@ void config_manager::close(void)
 			item.second._instances[i]->thread_cancel();                          // first stop the thread
 			item.second._destroy(item.second._instances[i]);                       
 		}
+#ifdef _LINUX
 		dlclose(item.second._dll_handle);
+#else
+		FreeLibrary(item.second._dll_handle);
+#endif
 	}
 }
 
