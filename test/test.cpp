@@ -7,7 +7,7 @@
 int main()
 {
 //        char* path = getenv("PLUGIN_PATH");
-        char* path;
+        char* path = "f:\\coding-on-github\\plugin\\config\\libconf.ini";
         if (!path)
         {
                 std::cerr << "you should set PLUGIN_PATH first" << std::endl;

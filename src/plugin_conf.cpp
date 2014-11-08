@@ -39,6 +39,19 @@ bool configurefile_parser::parse(void)
 		}
 		config_item.insert(std::make_pair(item.first, vec_temp));
 	}
+	{
+		auto func = [](pair<string, vector< pair<string, string> > > element)
+			    {
+				std::cout << element.first << std::endl;
+				std::for_each(element.second.begin(), element.second.end(),
+					[](const std::pair<string, string>& info)
+					{
+						std::cout << info.first << " : " << info.second << std::endl;
+					}
+				);
+			    };
+		std::for_each(config_item.begin(), config_item.end(), func);
+	}
 	return true;
 }
 
@@ -242,20 +255,27 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 {
 	plugin_entity entity_info;
 	LibItem lib_info = item;
-	string path = lib_info.path + "/" + lib_info.name;
-	create_t create;
-	destroy_t destroy;
+	string path = lib_info.path + "\\" + lib_info.name;
+	create_t create = nullptr;
+	destroy_t destroy = nullptr;
 
+	if (fs::exists(path.c_str()))
+	{
+		std::cout << path << " exist" << std::endl;
+	}else
+		std::cout << path << " not exist" << std::endl;
+	
 #ifdef _LINUX
-	void* handle;
+	void* handle = nullptr;
 #else
-	HINSTANCE handle;
+	HINSTANCE handle = nullptr;
 #endif
 
 #ifdef _LINUX
 	handle = dlopen(path.c_str(), RTLD_LAZY);
 #else 
 	handle = LoadLibrary(path.c_str());
+	std::cout << "LoadLibrary load file " << path.c_str() << std::endl;
 #endif
 	if (!handle)
 	{
@@ -269,7 +289,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 #endif
 	if (!create)
 	{
-		std::cerr << "load error" << std::endl;
+		std::cerr << "load create error" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 #ifdef _LINUX
@@ -279,7 +299,7 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 #endif
 	if (!destroy)
 	{
-		std::cerr << "load error" << std::endl;
+		std::cerr << "load destroy error" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	entity_info._status = lib_info.status;
