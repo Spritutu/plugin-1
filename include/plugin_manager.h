@@ -9,14 +9,16 @@ class plugin_manager : public boost::noncopyable
 {
 public:
         explicit        plugin_manager(const string& path);
-
                         ~plugin_manager();
 
+public:
+                        ~plugin_manager();
         void            start(void);
-
         void            stop(void);
+
 private:
         bool            refresh(void);
+
 private:
         config_manager* _config;
 };

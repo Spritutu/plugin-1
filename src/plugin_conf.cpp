@@ -7,7 +7,7 @@
 #include <thread>
 #ifdef _LINUX
 #include <dlfcn.h>
-#else
+else
 #include <windows.h>
 #endif
 

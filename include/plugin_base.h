@@ -1,5 +1,6 @@
 #pragma once
 #include <thread>
+
 class plugin_base
 {
 public:
@@ -7,7 +8,10 @@ public:
 	{
 		_status = true;
 	}
+
 	virtual ~plugin_base() {}
+
+public:
 
 	void function() 
 	{
@@ -19,12 +23,13 @@ public:
 	{
 		std::terminate();
 	}
+
 private:
 	void virtual do_function() = 0;	
+
 public:
 	bool                    _status;                    // the thread's running state
 	std::thread::id         _thread_id;
-
 };
 
 typedef plugin_base* (*create_t)(void);
