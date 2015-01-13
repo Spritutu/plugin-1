@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <thread>
 #ifdef _LINUX
-#include <dlfcn.h>
-else
-#include <windows.h>
+	#include <dlfcn.h>
+#else if defined _windows
+	#include <windows.h>
 #endif
 
 

@@ -68,7 +68,7 @@ class config_manager : public boost::noncopyable
 public:
 	config_manager(const string path);
 
-pubic:
+public:
 	bool					parse(void);
 	bool					check_diff(void);
 	bool                    load_dlls(void);

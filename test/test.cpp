@@ -4,7 +4,6 @@
 #include "../include/plugin_manager.h"
 #include "../include/logging.h"
 #include <iostream>
-#define _WIN
 
 int main()
 {

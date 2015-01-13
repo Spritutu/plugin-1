@@ -12,7 +12,6 @@ public:
                         ~plugin_manager();
 
 public:
-                        ~plugin_manager();
         void            start(void);
         void            stop(void);
 
