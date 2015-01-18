@@ -77,9 +77,9 @@ string configurefile_parser::get_item(const string& item, const string& key)
 	return value;
 }
 
-config_manager::config_manager(const string path) : _parser(path)
-{
-}
+config_manager::config_manager(const string path) 
+	: _parser(path)
+{}
 
 bool config_manager::parse(void)
 {
@@ -271,7 +271,12 @@ plugin_entity config_manager::load_dll(const string& name, const LibItem& item)
 {
 	plugin_entity entity_info;
 	LibItem lib_info = item;
+#ifdef _LINUX
+	string path = lib_info.path + "/" + lib_info.name;
+	LOG_INFO << "shared lib path : " << path;
+#else
 	string path = lib_info.path + "\\" + lib_info.name;
+#endif
 	create_t create = nullptr;
 	destroy_t destroy = nullptr;
 	
