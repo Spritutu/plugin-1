@@ -37,8 +37,7 @@ bool configurefile_parser::parse(void)
 	for (auto& item : m_ptree)
 	{
 		vector<pair<string, string> > vec_temp;
-		for (auto& node : item.second)
-		{
+		for (auto& node : item.second){
 			vec_temp.push_back(std::make_pair(node.first, node.second.get_value<string>()));
 		}
 		config_item.insert(std::make_pair(item.first, vec_temp));
@@ -46,15 +45,14 @@ bool configurefile_parser::parse(void)
 	// print the infomaiton reading from the configure file
 	{                                                                               
 		auto func = [](pair<string, vector< pair<string, string> > > element)
-			    {
-				LOG_INFO << element.first;
-				std::for_each(element.second.begin(), element.second.end(),
-					[](const std::pair<string, string>& info)
-					{
-						LOG_INFO << info.first << " : " << info.second;
-					}
-				);
-			    };
+			{
+					LOG_INFO << element.first;
+					std::for_each(element.second.begin(), element.second.end(),
+						[](const std::pair<string, string>& info)
+							{
+								LOG_INFO << info.first << " : " << info.second;
+							});
+			};
 		std::for_each(config_item.begin(), config_item.end(), func);
 	}
 	return true;
@@ -68,8 +66,7 @@ string configurefile_parser::get_item(const string& item, const string& key)
 	{
 		for (auto& vec_item : iter_map->second)
 		{
-			if (vec_item.first == key)
-			{
+			if (vec_item.first == key){
 				value = vec_item.second;
 			}
 		}
@@ -83,8 +80,7 @@ config_manager::config_manager(const string path)
 
 bool config_manager::parse(void)
 {
-	if (!_parser.parse())
-	{
+	if (!_parser.parse()){
 		LOG_ERROR << "config_manager::parse failed";
 		return false;
 	}
@@ -246,7 +242,7 @@ void config_manager::increase_thread_num(const string& name, size_t num)
 	}
 	else
 	{       
-						  // decrease num threads 
+		// decrease num threads 
 		LOG_DEBUG << "need to decrease the thread number";
 		int i = 0;
 		while (num++)

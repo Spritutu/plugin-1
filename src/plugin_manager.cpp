@@ -41,9 +41,7 @@ void plugin_manager::start()
 }
 
 void plugin_manager::stop()
-{
-
-}
+{}
 
 bool plugin_manager::refresh()
 {
